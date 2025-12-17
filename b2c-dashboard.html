@@ -442,6 +442,19 @@
 </div>
 
 <script>
+  // Universal storage wrapper for cross-platform compatibility
+  const AppStorage = {
+    setItem(key, value) {
+      try { localStorage.setItem(key, value); } catch (e) { console.warn('Storage unavailable'); }
+    },
+    getItem(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    },
+    removeItem(key) {
+      try { localStorage.removeItem(key); } catch (e) { }
+    }
+  };
+
   let currentUser = null;
   let selectedHoliday = null;
 
@@ -452,7 +465,7 @@
   });
 
   function checkAuth() {
-    const user = JSON.parse(localStorage.getItem('innenfor_currentUser'));
+    const user = JSON.parse(AppStorage.getItem('innenfor_currentUser'));
     if (!user || user.type !== 'privatperson') {
       alert('Ikke autorisert. Du må være privatperson-bruker.');
       window.location.href = 'innenfor.html';
@@ -464,7 +477,7 @@
 
   function loadData() {
     // Load orders history
-    const orders = JSON.parse(localStorage.getItem('b2c_orders') || '[]');
+    const orders = JSON.parse(AppStorage.getItem('b2c_orders') || '[]');
     const tbody = document.getElementById('historikkTable');
     
     if (orders.length === 0) {
@@ -517,13 +530,13 @@
     };
     
     // Lagre i både b2c_orders (for historikk) og innenfor_orders (for admin)
-    let b2cOrders = JSON.parse(localStorage.getItem('b2c_orders') || '[]');
+    let b2cOrders = JSON.parse(AppStorage.getItem('b2c_orders') || '[]');
     b2cOrders.push(order);
-    localStorage.setItem('b2c_orders', JSON.stringify(b2cOrders));
+    AppStorage.setItem('b2c_orders', JSON.stringify(b2cOrders));
     
-    let allOrders = JSON.parse(localStorage.getItem('innenfor_orders') || '[]');
+    let allOrders = JSON.parse(AppStorage.getItem('innenfor_orders') || '[]');
     allOrders.push({...order, source: 'B2C'});
-    localStorage.setItem('innenfor_orders', JSON.stringify(allOrders));
+    AppStorage.setItem('innenfor_orders', JSON.stringify(allOrders));
     
     alert('Orden bekreftet! Tracking ID: ' + order.id);
     closeOrderModal();
@@ -554,7 +567,7 @@
   }
 
   function logout() {
-    localStorage.removeItem('innenfor_currentUser');
+    AppStorage.removeItem('innenfor_currentUser');
     window.location.href = 'innenfor.html';
   }
 

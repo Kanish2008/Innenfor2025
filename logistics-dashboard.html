@@ -334,6 +334,19 @@
 </div>
 
 <script>
+  // Universal storage wrapper for cross-platform compatibility
+  const AppStorage = {
+    setItem(key, value) {
+      try { localStorage.setItem(key, value); } catch (e) { console.warn('Storage unavailable'); }
+    },
+    getItem(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    },
+    removeItem(key) {
+      try { localStorage.removeItem(key); } catch (e) { }
+    }
+  };
+
   let currentUser = null;
   let selectedOrderId = null;
   let allOrders = [];
@@ -345,7 +358,7 @@
 
   function checkAuth() {
     // For demo purposes, allow logistics partner access
-    const user = JSON.parse(localStorage.getItem('innenfor_currentUser'));
+    const user = JSON.parse(AppStorage.getItem('innenfor_currentUser'));
     if (!user) {
       // Create demo logistics user
       const demoUser = {
@@ -354,7 +367,7 @@
         email: 'logistics@partner.no',
         type: 'logistics'
       };
-      localStorage.setItem('innenfor_currentUser', JSON.stringify(demoUser));
+      AppStorage.setItem('innenfor_currentUser', JSON.stringify(demoUser));
       currentUser = demoUser;
     } else {
       currentUser = user;
@@ -363,8 +376,8 @@
 
   function loadOrders() {
     // Load orders from all sources (admin created, b2b, b2c)
-    const b2bOrders = JSON.parse(localStorage.getItem('innenfor_orders') || '[]');
-    const b2cOrders = JSON.parse(localStorage.getItem('b2c_orders') || '[]');
+    const b2bOrders = JSON.parse(AppStorage.getItem('innenfor_orders') || '[]');
+    const b2cOrders = JSON.parse(AppStorage.getItem('b2c_orders') || '[]');
     
     allOrders = [
       ...b2bOrders.map(o => ({...o, source: 'B2B'})),
@@ -478,7 +491,7 @@
   }
 
   function logout() {
-    localStorage.removeItem('innenfor_currentUser');
+    AppStorage.removeItem('innenfor_currentUser');
     window.location.href = 'innenfor.html';
   }
 </script>

@@ -610,6 +610,19 @@
 </div>
 
 <script>
+  // Universal storage wrapper for cross-platform compatibility
+  const AppStorage = {
+    setItem(key, value) {
+      try { AppStorage.setItem(key, value); } catch (e) { console.warn('Storage unavailable'); }
+    },
+    getItem(key) {
+      try { return AppStorage.getItem(key); } catch (e) { return null; }
+    },
+    removeItem(key) {
+      try { AppStorage.removeItem(key); } catch (e) { }
+    }
+  };
+
   let currentUser = null;
   let selectedMessageThread = null;
   let allOrders = [];
@@ -628,7 +641,7 @@
   });
 
   function checkAuth() {
-    const user = JSON.parse(localStorage.getItem('innenfor_currentUser'));
+    const user = JSON.parse(AppStorage.getItem('innenfor_currentUser'));
     if (!user || user.type !== 'administrator') {
       alert('Ikke autorisert. Du må være administrator.');
       window.location.href = 'innenfor.html';
@@ -640,7 +653,7 @@
   }
 
   function loadData() {
-    const users = JSON.parse(localStorage.getItem('innenfor_users') || '[]');
+    const users = JSON.parse(AppStorage.getItem('innenfor_users') || '[]');
     updateMetrics(users);
     populateUserTables(users);
     populateOrderSelects(users);
@@ -649,8 +662,8 @@
   }
 
   function loadAllOrders() {
-    const b2bOrders = JSON.parse(localStorage.getItem('innenfor_orders') || '[]');
-    const b2cOrders = JSON.parse(localStorage.getItem('b2c_orders') || '[]');
+    const b2bOrders = JSON.parse(AppStorage.getItem('innenfor_orders') || '[]');
+    const b2cOrders = JSON.parse(AppStorage.getItem('b2c_orders') || '[]');
     
     allOrders = [
       ...b2bOrders.map(o => ({
@@ -671,7 +684,7 @@
 
   function displayOrders() {
     const tbody = document.getElementById('ordersTable');
-    const users = JSON.parse(localStorage.getItem('innenfor_users') || '[]');
+    const users = JSON.parse(AppStorage.getItem('innenfor_users') || '[]');
     
     tbody.innerHTML = allOrders.map(order => {
       const user = users.find(u => u.id === order.userId);
@@ -691,13 +704,13 @@
   }
 
   function checkNewOrders() {
-    const b2bOrders = JSON.parse(localStorage.getItem('innenfor_orders') || '[]');
-    const b2cOrders = JSON.parse(localStorage.getItem('b2c_orders') || '[]');
+    const b2bOrders = JSON.parse(AppStorage.getItem('innenfor_orders') || '[]');
+    const b2cOrders = JSON.parse(AppStorage.getItem('b2c_orders') || '[]');
     const totalOrders = b2bOrders.length + b2cOrders.length;
     
     if (totalOrders > lastOrderCount) {
       const newOrderCount = totalOrders - lastOrderCount;
-      const users = JSON.parse(localStorage.getItem('innenfor_users') || '[]');
+      const users = JSON.parse(AppStorage.getItem('innenfor_users') || '[]');
       
       // Find the newest order
       const allNewOrders = [
@@ -723,7 +736,7 @@
   }
 
   function updateDashboard() {
-    const users = JSON.parse(localStorage.getItem('innenfor_users') || '[]');
+    const users = JSON.parse(AppStorage.getItem('innenfor_users') || '[]');
     const tbody = document.getElementById('recentUsersTable');
     
     const recentUsers = users.slice(-10).reverse();
@@ -739,8 +752,8 @@
   }
 
   function checkNewUsers() {
-    const users = JSON.parse(localStorage.getItem('innenfor_users') || '[]');
-    const lastCheck = JSON.parse(localStorage.getItem('lastUserCheck') || '{}');
+    const users = JSON.parse(AppStorage.getItem('innenfor_users') || '[]');
+    const lastCheck = JSON.parse(AppStorage.getItem('lastUserCheck') || '{}');
     
     users.forEach(user => {
       if (!lastCheck[user.id]) {
@@ -749,7 +762,7 @@
       }
     });
     
-    localStorage.setItem('lastUserCheck', JSON.stringify(users.reduce((acc, u) => ({...acc, [u.id]: true}), {})));
+    AppStorage.setItem('lastUserCheck', JSON.stringify(users.reduce((acc, u) => ({...acc, [u.id]: true}), {})));
   }
 
   function showNotification(message) {
@@ -811,7 +824,7 @@
     };
     
     allOrders.push(order);
-    localStorage.setItem('innenfor_orders', JSON.stringify(allOrders));
+    AppStorage.setItem('innenfor_orders', JSON.stringify(allOrders));
     logAction('Ordre opprettet', `Ordre ${order.id} opprettet`);
     alert('Ordre opprettet!');
     closeOrderModal();
@@ -819,7 +832,7 @@
   }
 
   function loadMessages() {
-    const users = JSON.parse(localStorage.getItem('innenfor_users') || '[]');
+    const users = JSON.parse(AppStorage.getItem('innenfor_users') || '[]');
     const messagesList = document.getElementById('messagesList');
     
     messagesList.innerHTML = users.filter(u => u.type !== 'administrator').map(user => `
@@ -832,7 +845,7 @@
 
   function openMessageThread(userId) {
     selectedMessageThread = userId;
-    const users = JSON.parse(localStorage.getItem('innenfor_users') || '[]');
+    const users = JSON.parse(AppStorage.getItem('innenfor_users') || '[]');
     const user = users.find(u => u.id === userId);
     
     document.getElementById('messageThreadHeader').textContent = `Samtale med ${user.name}`;
@@ -857,7 +870,7 @@
   }
 
   function generateReport(type) {
-    const users = JSON.parse(localStorage.getItem('innenfor_users') || '[]');
+    const users = JSON.parse(AppStorage.getItem('innenfor_users') || '[]');
     let content = '';
     
     if (type === 'users') {
@@ -889,19 +902,19 @@
   }
 
   function logAction(action, details) {
-    const logs = JSON.parse(localStorage.getItem('innenfor_auditLog') || '[]');
+    const logs = JSON.parse(AppStorage.getItem('innenfor_auditLog') || '[]');
     logs.push({
       timestamp: new Date().toISOString(),
       user: currentUser.name,
       action: action,
       details: details
     });
-    localStorage.setItem('innenfor_auditLog', JSON.stringify(logs));
+    AppStorage.setItem('innenfor_auditLog', JSON.stringify(logs));
     updateAuditTable();
   }
 
   function updateAuditTable() {
-    const logs = JSON.parse(localStorage.getItem('innenfor_auditLog') || '[]');
+    const logs = JSON.parse(AppStorage.getItem('innenfor_auditLog') || '[]');
     const tbody = document.getElementById('auditTable');
     
     const recentLogs = logs.slice(-20).reverse();
@@ -916,7 +929,7 @@
   }
 
   function logout() {
-    localStorage.removeItem('innenfor_currentUser');
+    AppStorage.removeItem('innenfor_currentUser');
     logAction('Utlogging', 'Admin logget ut');
     window.location.href = 'innenfor.html';
   }
@@ -941,7 +954,7 @@
   }
 
   function loadGDPRResponses() {
-    const gdprSubmissions = JSON.parse(localStorage.getItem('gdpr_submissions') || '[]');
+    const gdprSubmissions = JSON.parse(AppStorage.getItem('gdpr_submissions') || '[]');
     lastGDPRCount = gdprSubmissions.length;
     displayGDPRResponses(gdprSubmissions);
   }
@@ -963,7 +976,7 @@
   }
 
   function checkNewGDPRResponses() {
-    const gdprSubmissions = JSON.parse(localStorage.getItem('gdpr_submissions') || '[]');
+    const gdprSubmissions = JSON.parse(AppStorage.getItem('gdpr_submissions') || '[]');
     
     if (gdprSubmissions.length > lastGDPRCount) {
       const newResponseCount = gdprSubmissions.length - lastGDPRCount;
@@ -975,7 +988,7 @@
 
   // Load orders on startup
   window.addEventListener('load', function() {
-    allOrders = JSON.parse(localStorage.getItem('innenfor_orders') || '[]');
+    allOrders = JSON.parse(AppStorage.getItem('innenfor_orders') || '[]');
     updateAuditTable();
   });
 </script>
